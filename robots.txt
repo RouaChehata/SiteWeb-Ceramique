@@ -1,0 +1,8 @@
+User-agent: *
+Allow: /
+Disallow: /config.php
+Disallow: /create_database.sql
+Disallow: /database.sql
+Disallow: /test_connection.php
+
+Sitemap: http://localhost/ceramicc/sitemap.xml 
