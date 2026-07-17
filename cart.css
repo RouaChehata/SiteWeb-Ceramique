@@ -54,6 +54,18 @@
     margin-right: 15px;
 }
 
+.cart-item-no-image {
+    width: 80px;
+    height: 80px;
+    border-radius: 8px;
+    margin-right: 15px;
+    background: #f8e1e4;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border: 2px dashed #b48a92;
+}
+
 .cart-item-details {
     flex: 1;
 }
@@ -190,6 +202,12 @@
     }
 
     .cart-item-image {
+        width: 60px;
+        height: 60px;
+        margin-right: 0;
+    }
+
+    .cart-item-no-image {
         width: 60px;
         height: 60px;
         margin-right: 0;

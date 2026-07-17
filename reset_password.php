@@ -27,10 +27,96 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 $stmt = $conn->prepare("UPDATE users SET reset_token = ?, reset_expiry = ? WHERE email = ?");
                 $stmt->execute([$token, $expiry, $email]);
                 
-                // Envoyer l'email (à implémenter avec votre service d'email)
-                // Pour l'instant, on affiche juste le lien
-                $resetLink = "http://" . $_SERVER['HTTP_HOST'] . "/ceramicc/new_password.php?token=" . $token;
-                $success = true;
+                // Construire le lien de réinitialisation
+                $resetLink = "http://" . $_SERVER['HTTP_HOST'] . "/ceramic/new_password.php?token=" . $token;
+                
+                 // Configuration SMTP depuis .env
+                $smtpHost = $_ENV['SMTP_HOST'] ?? 'smtp.gmail.com';
+                $smtpPort = $_ENV['SMTP_PORT'] ?? 587;
+                $smtpUser = $_ENV['SMTP_USER'] ?? '';
+                $smtpPass = $_ENV['SMTP_PASS'] ?? '';
+                
+                // Envoyer l'email avec PHPMailer si disponible
+                if (file_exists('vendor/PHPMailer/PHPMailer.php')) {
+                    require 'vendor/PHPMailer/PHPMailer.php';
+                    require 'vendor/PHPMailer/SMTP.php';
+                    require 'vendor/PHPMailer/Exception.php';
+                    
+                    $mail = new PHPMailer\PHPMailer\PHPMailer(true);
+                    try {
+                        $mail->isSMTP();
+                        $mail->Host = $smtpHost;
+                        $mail->SMTPAuth = true;
+                        $mail->Username = $smtpUser;
+                        $mail->Password = $smtpPass;
+                        $mail->SMTPSecure = PHPMailer\PHPMailer\PHPMailer::ENCRYPTION_STARTTLS;
+                        $mail->Port = $smtpPort;
+                        
+                        $mail->setFrom('noreply@ceramicartnour.com', 'Ceramic Art Nour');
+                        $mail->addAddress($email);
+                        
+                        $mail->isHTML(true);
+                        $mail->Subject = 'Réinitialisation de votre mot de passe - Ceramic Art Nour';
+                        $mail->Body = "
+                        <html>
+                        <head>
+                        <title>Réinitialisation de mot de passe</title>
+                        </head>
+                        <body>
+                        <h2>Bonjour,</h2>
+                        <p>Vous avez demandé la réinitialisation de votre mot de passe pour votre compte Ceramic Art Nour.</p>
+                        <p>Cliquez sur le lien ci-dessous pour réinitialiser votre mot de passe :</p>
+                        <p><a href='" . $resetLink . "'>Réinitialiser mon mot de passe</a></p>
+                        <p>Ou copiez ce lien dans votre navigateur :</p>
+                        <p>" . $resetLink . "</p>
+                        <p>Ce lien expire dans 1 heure.</p>
+                        <p>Si vous n'avez pas demandé cette réinitialisation, ignorez cet email.</p>
+                        <p>Cordialement,<br>L'équipe Ceramic Art Nour</p>
+                        </body>
+                        </html>
+                        ";
+                        
+                        $mail->send();
+                        $success = true;
+                    } catch (Exception $e) {
+                        // En cas d'erreur SMTP, afficher le lien pour les tests
+                        $errors[] = "Erreur SMTP: " . $mail->ErrorInfo . "<br>Lien de réinitialisation (test): <a href='" . $resetLink . "'>" . $resetLink . "</a>";
+                    }
+                } else {
+                    // Fallback: utiliser mail() native
+                    $to = $email;
+                    $subject = "Réinitialisation de votre mot de passe - Ceramic Art Nour";
+                    $message = "
+                    <html>
+                    <head>
+                    <title>Réinitialisation de mot de passe</title>
+                    </head>
+                    <body>
+                    <h2>Bonjour,</h2>
+                    <p>Vous avez demandé la réinitialisation de votre mot de passe pour votre compte Ceramic Art Nour.</p>
+                    <p>Cliquez sur le lien ci-dessous pour réinitialiser votre mot de passe :</p>
+                    <p><a href='" . $resetLink . "'>Réinitialiser mon mot de passe</a></p>
+                    <p>Ou copiez ce lien dans votre navigateur :</p>
+                    <p>" . $resetLink . "</p>
+                    <p>Ce lien expire dans 1 heure.</p>
+                    <p>Si vous n'avez pas demandé cette réinitialisation, ignorez cet email.</p>
+                    <p>Cordialement,<br>L'équipe Ceramic Art Nour</p>
+                    </body>
+                    </html>
+                    ";
+                    
+                    $headers = "MIME-Version: 1.0\r\n";
+                    $headers .= "Content-type: text/html; charset=UTF-8\r\n";
+                    $headers .= "From: Ceramic Art Nour <noreply@ceramicartnour.com>\r\n";
+                    $headers .= "Reply-To: noreply@ceramicartnour.com\r\n";
+                    
+                    if (mail($to, $subject, $message, $headers)) {
+                        $success = true;
+                    } else {
+                        // En cas d'échec, afficher le lien pour les tests
+                        $errors[] = "Erreur lors de l'envoi de l'email. Lien de test: <a href='" . $resetLink . "'>" . $resetLink . "</a>";
+                    }
+                }
             } else {
                 $errors[] = "Aucun compte actif associé à cet email";
             }
@@ -165,7 +251,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             <?php if ($success): ?>
                 <div class="success-message">
                     <p>Un email de réinitialisation a été envoyé à votre adresse email.</p>
-                    <p>Lien de réinitialisation (pour test) : <?php echo htmlspecialchars($resetLink); ?></p>
                 </div>
             <?php endif; ?>
 

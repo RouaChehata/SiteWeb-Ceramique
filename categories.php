@@ -2,9 +2,15 @@
 session_start();
 require_once 'config.php';
 
-// Récupérer toutes les catégories
+// Récupérer toutes les catégories avec le nombre de produits
 try {
-    $stmt = $conn->prepare("SELECT * FROM categories ORDER BY created_at DESC");
+    $stmt = $conn->prepare("
+        SELECT c.*, COUNT(p.id) as product_count 
+        FROM categories c 
+        LEFT JOIN products p ON c.name = p.category 
+        GROUP BY c.id 
+        ORDER BY c.created_at DESC
+    ");
     $stmt->execute();
     $categories = $stmt->fetchAll();
 } catch(PDOException $e) {
@@ -85,9 +91,24 @@ try {
             <?php if (!empty($categories)): ?>
                 <div class="categories-grid">
                     <?php foreach ($categories as $cat): ?>
-                        <a href="categorie.php?id=<?php echo $cat['id']; ?>" class="category-card" style="text-decoration:none;color:inherit;">
+                        <a href="categorie.php?id=<?php echo $cat['id']; ?>" class="category-card">
+                            <div class="category-icon">
+                                <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="#e8a7b0" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                    <path d="M20.59 13.41l-7.17 7.17a2 2 0 0 1-2.83 0L2 12V2h10l8.59 8.59a2 2 0 0 1 0 2.82z"></path>
+                                    <line x1="7" y1="7" x2="7.01" y2="7"></line>
+                                </svg>
+                            </div>
                             <h3><?php echo htmlspecialchars($cat['name']); ?></h3>
                             <p><?php echo htmlspecialchars($cat['description']); ?></p>
+                            <div class="product-count">
+                                <span class="count-number"><?php echo (int)$cat['product_count']; ?></span>
+                                <span class="count-label">produit<?php echo ((int)$cat['product_count'] > 1) ? 's' : ''; ?></span>
+                            </div>
+                            <div class="category-arrow">
+                                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#e8a7b0" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                    <polyline points="9 18 15 12 9 6"></polyline>
+                                </svg>
+                            </div>
                         </a>
                     <?php endforeach; ?>
                 </div>
@@ -129,25 +150,144 @@ try {
     </script>
     <style>
         .categories-grid {
-            display: flex;
-            flex-wrap: wrap;
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
             gap: 2rem;
-            justify-content: center;
-            margin-top: 2rem;
+            margin-top: 3rem;
+            padding: 0 2rem;
         }
+        
         .category-card {
-            background: #f8e1e4;
-            border-radius: 16px;
-            box-shadow: 0 2px 8px rgba(180,138,146,0.08);
-            padding: 2rem 2.5rem;
-            min-width: 220px;
-            max-width: 320px;
+            background: linear-gradient(135deg, #f8e1e4 0%, #f0c4c8 100%);
+            border-radius: 24px;
+            box-shadow: 0 8px 32px rgba(180,138,146,0.12);
+            padding: 2.5rem;
+            text-decoration: none;
+            color: inherit;
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            position: relative;
+            overflow: hidden;
+            border: 1px solid rgba(255,255,255,0.2);
+            backdrop-filter: blur(10px);
+            display: flex;
+            flex-direction: column;
+            align-items: center;
             text-align: center;
-            transition: box-shadow 0.2s;
         }
+        
+        .category-card::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 4px;
+            background: linear-gradient(90deg, #e8a7b0, #d6959f, #e8a7b0);
+            background-size: 200% 100%;
+            animation: shimmer 3s ease-in-out infinite;
+        }
+        
+        @keyframes shimmer {
+            0% { background-position: -200% 0; }
+            100% { background-position: 200% 0; }
+        }
+        
         .category-card:hover {
-            box-shadow: 0 4px 16px rgba(180,138,146,0.18);
+            transform: translateY(-12px) scale(1.03);
+            box-shadow: 0 20px 40px rgba(180,138,146,0.25);
+            text-decoration: none;
+            color: inherit;
+        }
+        
+        .category-icon {
+            margin-bottom: 1.5rem;
+            transition: transform 0.3s ease;
+        }
+        
+        .category-card:hover .category-icon {
+            transform: scale(1.1) rotate(5deg);
+        }
+        
+        .category-card h3 {
+            font-size: 1.6rem;
+            font-weight: 700;
+            color: #4a4a4a;
+            margin-bottom: 1rem;
+            line-height: 1.3;
+        }
+        
+        .category-card p {
+            color: #6b6b6b;
+            font-size: 0.95rem;
+            line-height: 1.6;
+            margin-bottom: 1.5rem;
+            flex-grow: 1;
+        }
+        
+        .product-count {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 0.5rem;
+            background: rgba(255,255,255,0.3);
+            padding: 0.8rem 1.5rem;
+            border-radius: 20px;
+            margin-bottom: 1rem;
+            backdrop-filter: blur(5px);
+        }
+        
+        .count-number {
+            font-size: 1.2rem;
+            font-weight: 700;
+            color: #e8a7b0;
+        }
+        
+        .count-label {
+            font-size: 0.9rem;
+            color: #7d5c65;
+            font-weight: 500;
+        }
+        
+        .category-arrow {
+            margin-top: auto;
+            opacity: 0;
+            transform: translateX(-10px);
+            transition: all 0.3s ease;
+        }
+        
+        .category-card:hover .category-arrow {
+            opacity: 1;
+            transform: translateX(0);
+        }
+        
+        @media (max-width: 768px) {
+            .categories-grid {
+                grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
+                gap: 1.5rem;
+                padding: 0 1rem;
+                margin-top: 2rem;
+            }
+            
+            .category-card {
+                padding: 2rem;
+            }
+            
+            .category-card h3 {
+                font-size: 1.4rem;
+            }
+        }
+        
+        @media (max-width: 480px) {
+            .categories-grid {
+                grid-template-columns: 1fr;
+                gap: 1rem;
+                padding: 0 0.5rem;
+            }
+            
+            .category-card {
+                padding: 1.5rem;
+            }
         }
     </style>
 </body>
-</html> 
+</html>

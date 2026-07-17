@@ -188,24 +188,29 @@ function updateCartDisplay() {
         const price = parseFloat(item.price) || 0;
         const quantity = parseInt(item.quantity) || 1;
         const color = item.color || 'N/A';
+        
         // Gestion de l'image avec chemin par défaut si nécessaire
-        let imagePath = '';
+        let imageHtml = '';
         if (item.image && item.image.startsWith('http')) {
             // Si c'est une URL complète, on l'utilise telle quelle
-            imagePath = item.image;
+            imageHtml = `<img src="${item.image}" alt="${item.name}" class="cart-item-image">`;
         } else if (item.image) {
-            // Sinon, on vérifie si le fichier existe dans uploads
-            const basePath = window.location.pathname.includes('admin') ? '../uploads/' : 'uploads/';
-            const fullPath = basePath + item.image;
-            // On essaie de charger l'image, si elle échoue, on utilise l'image par défaut
-            imagePath = `onerror="this.src='im0.png';" src="${fullPath}"`;
+            // Si c'est une image uploadée ou l'image par défaut, on construit le chemin
+            const imagePath = item.image === 'im0.png' ? item.image : `uploads/${item.image}`;
+            imageHtml = `<img src="${imagePath}" alt="${item.name}" class="cart-item-image">`;
         } else {
-            // Si pas d'image, on utilise l'image par défaut
-            imagePath = 'src="im0.png"';
+            // Si pas d'image, on affiche une icône SVG
+            imageHtml = `<div class="cart-item-no-image">
+                <svg width="60" height="60" viewBox="0 0 24 24" fill="none" stroke="#b48a92" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+                    <rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect>
+                    <circle cx="8.5" cy="8.5" r="1.5"></circle>
+                    <polyline points="21 15 16 10 5 21"></polyline>
+                </svg>
+            </div>`;
         }
 
         itemElement.innerHTML = `
-            <img ${imagePath} alt="${item.name}" class="cart-item-image">
+            ${imageHtml}
             <div class="cart-item-details">
                 <h3>${item.name}</h3>
                 <p>Couleur: ${color}</p>
@@ -219,8 +224,6 @@ function updateCartDisplay() {
             <button type="button" class="remove-item">×</button>
         `;
         cartContainer.appendChild(itemElement);
-
-        // On supprime les gestionnaires d'événements individuels
     });
 
     // Gérer l'affichage du total et du bouton
@@ -243,6 +246,13 @@ function updateCartDisplay() {
     // Afficher le bouton de commande
     if (checkoutForm) {
         checkoutForm.style.display = 'block';
+        
+        // Mettre à jour le champ caché avec les données du panier
+        const cartDataInput = document.getElementById('cartDataInput');
+        if (cartDataInput) {
+            cartDataInput.value = JSON.stringify(cart);
+            console.log('Cart data updated:', cart); // Debug
+        }
     }
 }
 
@@ -295,6 +305,44 @@ document.addEventListener('DOMContentLoaded', function() {
     updateCartDisplay();
     addClearCartButton();
 });
+
+// Fonction pour ajouter un bouton de vidage du panier
+function addClearCartButton() {
+    const cartContainer = document.querySelector('.cart-container');
+    if (!cartContainer) return;
+    
+    // Vérifier si le bouton existe déjà
+    if (cartContainer.querySelector('.clear-cart-btn')) return;
+    
+    const clearButton = document.createElement('button');
+    clearButton.className = 'clear-cart-btn';
+    clearButton.textContent = 'Vider le panier';
+    clearButton.style.cssText = `
+        background: #e74c3c;
+        color: white;
+        border: none;
+        padding: 8px 16px;
+        border-radius: 4px;
+        cursor: pointer;
+        margin: 10px 0;
+        font-size: 14px;
+        transition: background 0.3s ease;
+    `;
+    
+    clearButton.addEventListener('click', function() {
+        if (confirm('Êtes-vous sûr de vouloir vider le panier ?')) {
+            localStorage.removeItem('cart');
+            updateCartDisplay();
+            showNotification('Panier vidé');
+        }
+    });
+    
+    // Insérer le bouton avant le formulaire de checkout
+    const checkoutForm = document.getElementById('checkoutForm');
+    if (checkoutForm) {
+        cartContainer.insertBefore(clearButton, checkoutForm);
+    }
+}
 
 // Initialisation directe à la fin du script pour garantir l'exécution
 // updateCartDisplay();

@@ -1,0 +1,62 @@
+# Variables d'environnement
+.env
+.env.local
+.env.production
+ 
+# Dépendances
+/vendor/
+composer.lock
+package-lock.json
+ 
+# Fichiers de configuration sensibles
+config.local.php
+config.production.php
+ 
+# Logs
+*.log
+logs/
+ 
+# Fichiers temporaires
+*.tmp
+*.temp
+*.swp
+*.swo
+*~
+*.zip
+ 
+# Cache
+.cache/
+.php_cs.cache
+ 
+# IDE
+.vscode/
+.idea/
+*.sublime-project
+*.sublime-workspace
+ 
+# OS
+.DS_Store
+Thumbs.db
+ 
+# Uploads
+uploads/*
+!uploads/.gitkeep
+ 
+# Sauvegardes de base de données
+*.sql
+*.sqlite
+*.db
+ 
+# Certificats et clés
+*.pem
+*.key
+*.crt
+*.p12
+*.pfx
+ 
+# Fichiers de test
+test.php
+test_*.php
+admin/test_db.php
+
+5 more

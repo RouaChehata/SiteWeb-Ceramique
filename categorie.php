@@ -122,17 +122,19 @@ if (isset($_GET['id']) && is_numeric($_GET['id'])) {
                                 <p><?php echo htmlspecialchars($product['description']); ?></p>
                                 <div class="product-price"><?php echo number_format($product['price'], 2); ?> TND</div>
                                 <?php if ((int)$product['stock'] <= 0): ?>
-                                    <div style="color:#c0392b;font-weight:bold;margin-bottom:0.7rem;">Stock : Rupture</div>
-                                    <button class="search-btn" style="background:#ccc;cursor:not-allowed;" disabled>Ajouter au panier</button>
+                                    <div class="stock-info stock-out">Stock : Rupture</div>
+                                    <button class="add-to-cart-btn" disabled>Ajouter au panier</button>
                                 <?php else: ?>
-                                    <div style="color:#7d5c65;font-weight:500;margin-bottom:0.7rem;">Stock : <?php echo (int)$product['stock']; ?> pièce<?php echo ((int)$product['stock'] > 1) ? 's' : ''; ?></div>
-                                    <button class="search-btn" onclick='addToCart({
-                                        id: <?php echo json_encode($product['id']); ?>,
-                                        name: <?php echo json_encode($product['name']); ?>,
-                                        price: <?php echo json_encode($product['price']); ?>,
-                                        image: <?php echo ($productImage === $defaultImage) ? json_encode($defaultImage) : json_encode($basePath . $product['image']); ?>,
-                                        color: ""
-                                    }); updateCartDisplay(); addClearCartButton();'>Ajouter au panier</button>
+                                    <div class="stock-info <?php echo ((int)$product['stock'] <= 5) ? 'stock-low' : 'stock-good'; ?>">
+                                        Stock : <?php echo (int)$product['stock']; ?> pièce<?php echo ((int)$product['stock'] > 1) ? 's' : ''; ?>
+                                    </div>
+                                    <button class="add-to-cart-btn" onclick="addToCart({
+                                        id: '<?php echo $product['id']; ?>',
+                                        name: '<?php echo htmlspecialchars($product['name']); ?>',
+                                        price: <?php echo $product['price']; ?>,
+                                        image: '<?php echo $productImage; ?>',
+                                        color: ''
+                                    })">Ajouter au panier</button>
                                 <?php endif; ?>
                             </div>
                         <?php endforeach; ?>
@@ -176,31 +178,182 @@ if (isset($_GET['id']) && is_numeric($_GET['id'])) {
     </script>
     <style>
         .products-grid {
-            display: flex;
-            flex-wrap: wrap;
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
             gap: 2rem;
             justify-content: center;
             margin-top: 2rem;
+            padding: 0 2rem;
         }
+        
         .product-card {
-            background: #f8e1e4;
-            border-radius: 16px;
-            box-shadow: 0 2px 8px rgba(180,138,146,0.08);
-            padding: 2rem 2.5rem;
-            min-width: 220px;
-            max-width: 320px;
+            background: linear-gradient(135deg, #f8e1e4 0%, #f0c4c8 100%);
+            border-radius: 20px;
+            box-shadow: 0 8px 32px rgba(180,138,146,0.12);
+            padding: 2rem;
             text-align: center;
-            transition: box-shadow 0.2s;
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            position: relative;
+            overflow: hidden;
+            border: 1px solid rgba(255,255,255,0.2);
+            backdrop-filter: blur(10px);
         }
+        
+        .product-card::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 4px;
+            background: linear-gradient(90deg, #e8a7b0, #d6959f, #e8a7b0);
+            background-size: 200% 100%;
+            animation: shimmer 3s ease-in-out infinite;
+        }
+        
+        @keyframes shimmer {
+            0% { background-position: -200% 0; }
+            100% { background-position: 200% 0; }
+        }
+        
         .product-card:hover {
-            box-shadow: 0 4px 16px rgba(180,138,146,0.18);
+            transform: translateY(-8px) scale(1.02);
+            box-shadow: 0 20px 40px rgba(180,138,146,0.2);
         }
+        
         .product-thumbnail {
-            width: 120px;
-            height: 120px;
+            width: 140px;
+            height: 140px;
             object-fit: cover;
-            border-radius: 12px;
+            border-radius: 16px;
+            margin-bottom: 1.5rem;
+            transition: transform 0.3s ease;
+            box-shadow: 0 4px 12px rgba(180,138,146,0.15);
+        }
+        
+        .product-card:hover .product-thumbnail {
+            transform: scale(1.05);
+        }
+        
+        .product-card h3 {
+            font-size: 1.3rem;
+            font-weight: 700;
+            color: #4a4a4a;
+            margin-bottom: 0.8rem;
+            line-height: 1.3;
+        }
+        
+        .product-card p {
+            color: #6b6b6b;
+            font-size: 0.95rem;
+            line-height: 1.5;
+            margin-bottom: 1.2rem;
+            min-height: 3rem;
+        }
+        
+        .product-price {
+            font-size: 1.4rem;
+            font-weight: 800;
+            color: #7d5c65;
             margin-bottom: 1rem;
+            position: relative;
+            display: inline-block;
+        }
+        
+        .product-price::after {
+            content: '';
+            position: absolute;
+            bottom: -2px;
+            left: 0;
+            right: 0;
+            height: 2px;
+            background: linear-gradient(90deg, transparent, #e8a7b0, transparent);
+        }
+        
+        .add-to-cart-btn {
+            background: linear-gradient(135deg, #e8a7b0 0%, #d6959f 100%);
+            color: white;
+            border: none;
+            padding: 1rem 2rem;
+            border-radius: 12px;
+            cursor: pointer;
+            font-weight: 600;
+            font-size: 1rem;
+            transition: all 0.3s ease;
+            margin-top: 0.8rem;
+            width: 100%;
+            box-shadow: 0 4px 12px rgba(180,138,146,0.2);
+            position: relative;
+            overflow: hidden;
+        }
+        
+        .add-to-cart-btn::before {
+            content: '';
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            width: 0;
+            height: 0;
+            border-radius: 50%;
+            background: rgba(255,255,255,0.3);
+            transform: translate(-50%, -50%);
+            transition: width 0.6s, height 0.6s;
+        }
+        
+        .add-to-cart-btn:hover::before {
+            width: 300px;
+            height: 300px;
+        }
+        
+        .add-to-cart-btn:hover:not(:disabled) {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 20px rgba(180,138,146,0.3);
+        }
+        
+        .add-to-cart-btn:active:not(:disabled) {
+            transform: translateY(0);
+        }
+        
+        .add-to-cart-btn:disabled {
+            background: linear-gradient(135deg, #ccc 0%, #999 100%);
+            cursor: not-allowed;
+            opacity: 0.6;
+        }
+        
+        .stock-info {
+            font-weight: 500;
+            margin-bottom: 0.8rem;
+            padding: 0.5rem;
+            border-radius: 8px;
+            background: rgba(255,255,255,0.3);
+        }
+        
+        .stock-low { color: #e67e22; }
+        .stock-out { color: #c0392b; font-weight: bold; }
+        .stock-good { color: #27ae60; }
+        
+        @media (max-width: 768px) {
+            .products-grid {
+                grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
+                gap: 1.5rem;
+                padding: 0 1rem;
+            }
+            
+            .product-card {
+                padding: 1.5rem;
+            }
+            
+            .product-thumbnail {
+                width: 120px;
+                height: 120px;
+            }
+        }
+        
+        @media (max-width: 480px) {
+            .products-grid {
+                grid-template-columns: 1fr;
+                gap: 1rem;
+            }
         }
     </style>
 </body>

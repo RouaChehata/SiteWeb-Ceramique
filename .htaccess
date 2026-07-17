@@ -1,0 +1,11 @@
+# Activer le moteur de réécriture
+RewriteEngine On
+
+# Définir le fichier index par défaut
+DirectoryIndex ce.php index.php index.html
+
+# S'assurer que les fichiers PHP sont traités
+<FilesMatch "\.php$">
+    SetHandler application/x-httpd-php
+</FilesMatch>
+

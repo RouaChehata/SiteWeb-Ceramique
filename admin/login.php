@@ -25,9 +25,12 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         try {
             // Vérifier si c'est un admin (pour l'instant, on utilise un admin par défaut)
             // En production, vous devriez avoir une table admins séparée
-            if ($username === 'admin' && $password === 'admin123') {
+            $adminUsername = $_ENV['ADMIN_USERNAME'] ?? 'admin';
+            $adminPassword = $_ENV['ADMIN_PASSWORD'] ?? 'admin123';
+            
+            if ($username === $adminUsername && $password === $adminPassword) {
                 $_SESSION['admin_id'] = 1;
-                $_SESSION['admin_username'] = 'admin';
+                $_SESSION['admin_username'] = $adminUsername;
                 header('Location: index.php');
                 exit();
             } else {

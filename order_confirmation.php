@@ -112,7 +112,7 @@
                 }
             ?>
             <p>Votre commande est en cours de préparation. Nous vous contacterons bientôt pour confirmer la livraison.</p>
-            <a href="ce.html" class="back-to-home">Retour à l'accueil</a>
+            <a href="ce.php" class="back-to-home">Retour à l'accueil</a>
         </div>
     </main>
 

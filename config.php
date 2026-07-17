@@ -1,8 +1,33 @@
 <?php
-$servername = "localhost";
-$username = "root";
-$password = ""; // À changer pour un mot de passe sécurisé en production
-$dbname = "ceramic_shop"; // Changé pour correspondre au nom de la base de données existante
+// Charger les variables d'environnement depuis .env de manière native
+$envFile = __DIR__ . '/.env';
+if (file_exists($envFile)) {
+    $lines = file($envFile, FILE_IGNORE_NEW_LINES | FILE_SKIP_EMPTY_LINES);
+    foreach ($lines as $line) {
+        // Ignorer les commentaires
+        if (strpos(trim($line), '#') === 0) {
+            continue;
+        }
+        // Parser la ligne
+        if (strpos($line, '=') !== false) {
+            list($key, $value) = explode('=', $line, 2);
+            $key = trim($key);
+            $value = trim($value);
+            // Supprimer les guillemets si présents
+            if (preg_match('/^(["\'])(.*)\1$/', $value, $matches)) {
+                $value = $matches[2];
+            }
+            $_ENV[$key] = $value;
+            putenv("$key=$value");
+        }
+    }
+}
+
+// Valeurs par défaut si les variables ne sont pas définies
+$servername = $_ENV['DB_HOST'] ?? 'localhost';
+$username = $_ENV['DB_USER'] ?? 'root';
+$password = $_ENV['DB_PASS'] ?? '';
+$dbname = $_ENV['DB_NAME'] ?? 'ceramic_shop';
 
 try {
     $conn = new PDO("mysql:host=$servername;dbname=$dbname", $username, $password);

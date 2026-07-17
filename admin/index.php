@@ -9,6 +9,7 @@ if (!isset($_SESSION['admin_id'])) {
 }
 
 // Récupérer les statistiques
+$error = null;
 try {
     // Nombre total d'utilisateurs
     $stmt = $conn->prepare("SELECT COUNT(*) as total_users FROM users WHERE is_active = TRUE");
@@ -41,6 +42,15 @@ try {
 
 } catch(PDOException $e) {
     $error = "Erreur lors de la récupération des statistiques: " . $e->getMessage();
+}
+
+// Valeurs par défaut en cas d'erreur
+if ($error) {
+    $totalUsers = 0;
+    $totalOrders = 0;
+    $totalRevenue = 0;
+    $pendingOrders = 0;
+    $recentOrders = [];
 }
 ?>
 <!DOCTYPE html>
